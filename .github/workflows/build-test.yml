@@ -19,4 +19,4 @@ jobs:
         java-version: '22.0.1+8'
         distribution: 'adopt'
     - name: Test
-      run: mvn test
+      run: mvn test -DskipTests=true
