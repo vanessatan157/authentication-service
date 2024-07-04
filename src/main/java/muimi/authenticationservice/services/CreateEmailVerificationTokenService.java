@@ -1,5 +1,6 @@
 package muimi.authenticationservice.services;
 
+import jakarta.transaction.Transactional;
 import muimi.authenticationservice.entities.EmailVerificationToken;
 import muimi.authenticationservice.repositories.EmailVerificationRepository;
 import muimi.authenticationservice.responsemodel.CreateEmailVerificationTokenResponse;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+@Transactional
 @Service
 public class CreateEmailVerificationTokenService {
     @Autowired
@@ -20,6 +22,8 @@ public class CreateEmailVerificationTokenService {
     private HashingService hashingService;
 
     public CreateEmailVerificationTokenResponse createVerificationToken(String accountID) {
+        revokeOldTokens(accountID);
+
         String newToken = generateTokenService.generateToken();
         String hashedToken = hashingService.hash(newToken);
 
@@ -27,6 +31,10 @@ public class CreateEmailVerificationTokenService {
         EmailVerificationToken insertedToken = emailVerificationRepository.save(newEmailVerificationToken);
 
         return new CreateEmailVerificationTokenResponse("SUCCESS", insertedToken.getId(), newToken);
+    }
+
+    private void revokeOldTokens(String accountID) {
+        emailVerificationRepository.invalidateTokensByAccountID(accountID);
     }
 
     private EmailVerificationToken createVerificationTokenORM(

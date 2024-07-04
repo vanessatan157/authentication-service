@@ -37,5 +37,11 @@ public class EmailVerificationToken {
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /**
+     * Only set to false if revoked, due to a new token generated...
+     */
+    @Column(nullable = false)
+    private boolean isValid = true;
 }
 

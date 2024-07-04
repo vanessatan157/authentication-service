@@ -37,6 +37,10 @@ public class VerifyEmailVerificationTokenService {
             return new VerifyEmailVerificationTokenResponse("EXPIRED_TOKEN", false, verificationToken.getAccountID());
         }
 
+        if (!verificationToken.isValid()) {
+            return new VerifyEmailVerificationTokenResponse("INVALID_TOKEN", false, verificationToken.getAccountID());
+        }
+
         verificationToken.setConsumed(true);
         verificationToken.setConsumedAt(LocalDateTime.now());
         emailVerificationRepository.save(verificationToken);
