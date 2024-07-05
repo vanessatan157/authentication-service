@@ -1,6 +1,5 @@
 package muimi.authenticationservice.services;
 import java.security.SecureRandom;
-import java.util.Base64;
 import org.springframework.stereotype.Service;
 
 /**

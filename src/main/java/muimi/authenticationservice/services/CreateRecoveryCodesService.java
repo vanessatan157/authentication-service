@@ -22,12 +22,12 @@ public class CreateRecoveryCodesService {
     private RecoveryCodeRepository recoveryCodeRepository;
 
     /**
-     * Create 16 Recovery Codes for an account.
+     * Create 4 Recovery Codes for an account.
      * Previous Recovery Codes will be revoked.
      */
     public String[] createRecoveryCodes(String accountID) throws Exception {
         RecoveryCodeGenerator recoveryCodes = new RecoveryCodeGenerator();
-        String[] codes = recoveryCodes.generateCodes(16);
+        String[] codes = recoveryCodes.generateCodes(4);
 
         // NOTE: As encryption service makes an HTTP API call,
         // this should be done in parallel to improve performance.

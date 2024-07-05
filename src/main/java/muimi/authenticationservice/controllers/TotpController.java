@@ -3,11 +3,9 @@ package muimi.authenticationservice.controllers;
 import jakarta.persistence.EntityNotFoundException;
 import muimi.authenticationservice.responsemodel.CreateTotpResponse;
 import muimi.authenticationservice.responsemodel.GenerateRecoveryCodeResponse;
+import muimi.authenticationservice.responsemodel.VerifyRecoveryCodeResponse;
 import muimi.authenticationservice.responsemodel.VerifyTotpCodeResponse;
-import muimi.authenticationservice.services.CreateRecoveryCodesService;
-import muimi.authenticationservice.services.GenerateTotpQrService;
-import muimi.authenticationservice.services.GenerateTotpSecretService;
-import muimi.authenticationservice.services.VerifyTotpCodeService;
+import muimi.authenticationservice.services.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +32,9 @@ public class TotpController {
 
     @Autowired
     private CreateRecoveryCodesService createRecoveryCodesService;
+
+    @Autowired
+    private VerifyRecoveryCodeService verifyRecoveryCodeService;
 
     @PostMapping(path="/totp/generate-token")
     public @ResponseBody ResponseEntity<CreateTotpResponse> generateToken(
@@ -101,6 +102,28 @@ public class TotpController {
         } catch (Exception e) {
             log.error(e.getMessage());
             GenerateRecoveryCodeResponse response = new GenerateRecoveryCodeResponse("SERVER_ERROR", null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(path="/totp/verify-recovery-code")
+    public @ResponseBody ResponseEntity<VerifyRecoveryCodeResponse> verifyRecoveryCode(
+            @RequestHeader(name="Authorization") String authHeader,
+            @RequestParam String accountID,
+            @RequestParam String code
+    ) {
+        if (isBadApiKey(authHeader)) {
+            VerifyRecoveryCodeResponse response = new VerifyRecoveryCodeResponse("BAD_API_KEY", false);
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+
+        try {
+            boolean valid = verifyRecoveryCodeService.verifyRecoveryCode(accountID, code);
+            VerifyRecoveryCodeResponse response = new VerifyRecoveryCodeResponse("SUCCESS", valid);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            VerifyRecoveryCodeResponse response = new VerifyRecoveryCodeResponse("SERVER_ERROR", false);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
