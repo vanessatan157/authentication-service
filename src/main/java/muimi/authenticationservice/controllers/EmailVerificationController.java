@@ -1,5 +1,6 @@
 package muimi.authenticationservice.controllers;
 
+import jakarta.persistence.EntityNotFoundException;
 import muimi.authenticationservice.responsemodel.CreateEmailVerificationTokenResponse;
 import muimi.authenticationservice.responsemodel.VerifyEmailVerificationTokenResponse;
 import muimi.authenticationservice.services.CreateEmailVerificationTokenService;

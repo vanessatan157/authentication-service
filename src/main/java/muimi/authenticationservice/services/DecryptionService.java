@@ -16,7 +16,7 @@ public class DecryptionService {
         String baseUrl = System.getenv("ENCRYPTION_SERVICE_HOST") + ":" + System.getenv("ENCRYPTION_SERVICE_PORT");
         String url = "http://%s/crypt/decrypt".formatted(baseUrl);
 
-        String formData = "encryptionType=AES_256&content=%s&id=%s".formatted(content, id);
+        String formData = "content=%s&id=%s".formatted(content, id);
         String authorizationHeader = System.getenv("ENCRYPTION_SERVICE_API_KEY");
 
         HttpURLConnection con = Utils.getHttpURLConnection(url, authorizationHeader, formData);

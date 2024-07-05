@@ -89,6 +89,7 @@
             <version>1.78.1</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/dev.samstevens.totp/totp -->
         <dependency>
             <groupId>dev.samstevens.totp</groupId>
             <artifactId>totp</artifactId>
