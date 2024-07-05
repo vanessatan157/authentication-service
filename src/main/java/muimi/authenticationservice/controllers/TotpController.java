@@ -2,8 +2,9 @@ package muimi.authenticationservice.controllers;
 
 import jakarta.persistence.EntityNotFoundException;
 import muimi.authenticationservice.responsemodel.CreateTotpResponse;
-import muimi.authenticationservice.responsemodel.VerifyEmailVerificationTokenResponse;
+import muimi.authenticationservice.responsemodel.GenerateRecoveryCodeResponse;
 import muimi.authenticationservice.responsemodel.VerifyTotpCodeResponse;
+import muimi.authenticationservice.services.CreateRecoveryCodesService;
 import muimi.authenticationservice.services.GenerateTotpQrService;
 import muimi.authenticationservice.services.GenerateTotpSecretService;
 import muimi.authenticationservice.services.VerifyTotpCodeService;
@@ -30,6 +31,9 @@ public class TotpController {
 
     @Autowired
     private VerifyTotpCodeService verifyTotpCodeService;
+
+    @Autowired
+    private CreateRecoveryCodesService createRecoveryCodesService;
 
     @PostMapping(path="/totp/generate-token")
     public @ResponseBody ResponseEntity<CreateTotpResponse> generateToken(
@@ -76,6 +80,27 @@ public class TotpController {
         }  catch (Exception e) {
             log.error(e.getMessage());
             VerifyTotpCodeResponse response = new VerifyTotpCodeResponse("SERVER_ERROR", false);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(path="/totp/generate-recovery-code")
+    public @ResponseBody ResponseEntity<GenerateRecoveryCodeResponse> generateRecoveryCode(
+            @RequestHeader(name="Authorization") String authHeader,
+            @RequestParam String accountID
+    ) {
+        if (isBadApiKey(authHeader)) {
+            GenerateRecoveryCodeResponse response = new GenerateRecoveryCodeResponse("BAD_API_KEY", null);
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+
+        try {
+            String[] codes = createRecoveryCodesService.createRecoveryCodes(accountID);
+            GenerateRecoveryCodeResponse response = new GenerateRecoveryCodeResponse("SUCCESS", codes);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            GenerateRecoveryCodeResponse response = new GenerateRecoveryCodeResponse("SERVER_ERROR", null);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
