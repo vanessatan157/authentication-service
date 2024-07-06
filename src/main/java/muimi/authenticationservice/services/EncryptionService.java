@@ -1,37 +1,46 @@
 package muimi.authenticationservice.services;
 
 import com.google.gson.Gson;
-import muimi.authenticationservice.Utils;
 import muimi.authenticationservice.models.EncryptionServiceApiResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class EncryptionService {
+    private final RestTemplate restTemplate ;
+
+    @Autowired
+    public EncryptionService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
     public String encryptContent(String id, String content) throws Exception {
         String baseUrl = System.getenv("ENCRYPTION_SERVICE_HOST") + ":" + System.getenv("ENCRYPTION_SERVICE_PORT");
         String url = "http://%s/crypt/encrypt".formatted(baseUrl);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", System.getenv("ENCRYPTION_SERVICE_API_KEY"));
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        String formData = "encryptionType=AES_256&content=%s&id=%s".formatted(content, id);
-        String authorizationHeader = System.getenv("ENCRYPTION_SERVICE_API_KEY");
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("encryptionType", "AES_256");
+        body.add("content", content);
+        body.add("id", id);
 
-        HttpURLConnection con = Utils.getHttpURLConnection(url, authorizationHeader, formData);
-        StringBuilder response;
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
-            String inputLine;
-            response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-        } finally {
-            con.disconnect();
-        }
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> responseEntity = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
+                String.class
+        );
 
         Gson gson = new Gson();
-        EncryptionServiceApiResponse apiResponse = gson.fromJson(response.toString(), EncryptionServiceApiResponse.class);
+        EncryptionServiceApiResponse apiResponse = gson.fromJson(responseEntity.getBody(), EncryptionServiceApiResponse.class);
 
         String status = apiResponse.getStatus();
         if (status.equals("SUCCESS")) {
@@ -40,5 +49,4 @@ public class EncryptionService {
             throw new Exception("Failed to encrypt secret: " + status);
         }
     }
-
 }

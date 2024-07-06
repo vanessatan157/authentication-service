@@ -1,38 +1,45 @@
 package muimi.authenticationservice.services;
 
 import com.google.gson.Gson;
-import muimi.authenticationservice.Utils;
 import muimi.authenticationservice.models.DecryptionServiceApiResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class DecryptionService {
+    private final RestTemplate restTemplate ;
+
+    @Autowired
+    public DecryptionService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     public String decryptContent(String id, String content) throws Exception {
         String baseUrl = System.getenv("ENCRYPTION_SERVICE_HOST") + ":" + System.getenv("ENCRYPTION_SERVICE_PORT");
         String url = "http://%s/crypt/decrypt".formatted(baseUrl);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", System.getenv("ENCRYPTION_SERVICE_API_KEY"));
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        String formData = "content=%s&id=%s".formatted(content, id);
-        String authorizationHeader = System.getenv("ENCRYPTION_SERVICE_API_KEY");
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("content", content);
+        body.add("id", id);
 
-        HttpURLConnection con = Utils.getHttpURLConnection(url, authorizationHeader, formData);
-        StringBuilder response;
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
-            String inputLine;
-            response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-        } finally {
-            con.disconnect();
-        }
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> responseEntity = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
+                String.class
+        );
 
         Gson gson = new Gson();
-        DecryptionServiceApiResponse apiResponse = gson.fromJson(response.toString(), DecryptionServiceApiResponse.class);
+        DecryptionServiceApiResponse apiResponse = gson.fromJson(responseEntity.getBody(), DecryptionServiceApiResponse.class);
 
         String status = apiResponse.getStatus();
         if (status.equals("SUCCESS")) {
